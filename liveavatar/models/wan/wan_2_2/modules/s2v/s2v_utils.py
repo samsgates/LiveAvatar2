@@ -1,8 +1,9 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
 import numpy as np
 import torch
+from ....inference_utils import conditional_compile
 
-
+# @conditional_compile
 def rope_precompute(x, grid_sizes, freqs, start=None):
     b, s, n, c = x.size(0), x.size(1), x.size(2), x.size(3) // 2
 
@@ -12,7 +13,7 @@ def rope_precompute(x, grid_sizes, freqs, start=None):
         freqs = freqs[0]
     freqs = freqs.split([c - 2 * (c // 3), c // 3, c // 3], dim=1)
     # loop over samples
-    output = torch.view_as_complex(x.detach().to(torch.float16).reshape(b, s, n, -1,
+    output = torch.view_as_complex(x.detach().contiguous().to(torch.float16).reshape(b, s, n, -1,
                                                       2))
     seq_bucket = [0]
     if not type(grid_sizes) is list:
@@ -66,6 +67,7 @@ def rope_precompute(x, grid_sizes, freqs, start=None):
                 # apply rotary embedding
                 output[i, seq_bucket[-1]:seq_bucket[-1] + seq_len] = freqs_i
         seq_bucket.append(seq_bucket[-1] + seq_len)
+    output = torch.complex(output.real, output.imag)
     return output
 
 

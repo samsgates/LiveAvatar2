@@ -324,6 +324,11 @@ def _parse_args():
         action="store_true",
         default=False,
         help="Whether to enable online decode.")
+    parser.add_argument(
+        "--fp8",
+        action="store_true",
+        default=False,
+        help="Whether to enable fp8 quantization.")
     args = parser.parse_args()
 
     _validate_args(args)
@@ -466,7 +471,7 @@ def generate(args, training_settings):
 
 
             if args.lora_path_dmd is not None:
-                wan_s2v.add_lora_to_model(
+                wan_s2v.noise_model = wan_s2v.add_lora_to_model(
                     wan_s2v.noise_model,
                     lora_rank=training_settings['lora_rank'],
                     lora_alpha=training_settings['lora_alpha'],
@@ -475,7 +480,21 @@ def generate(args, training_settings):
                     pretrained_lora_path=args.lora_path_dmd,
                     load_lora_weight_only=False,
                 )
-            
+
+        if args.fp8:
+            if hasattr(torch, "_scaled_mm"):
+                from liveavatar.utils.fp8_linear import replace_linear_with_scaled_fp8
+                replace_linear_with_scaled_fp8(
+                    wan_s2v.noise_model,
+                    ignore_keys=[
+                        'text_embedding', 'time_embedding',
+                        'time_projection', 'head.head',
+                        'casual_audio_encoder.encoder.final_linear',
+                    ]
+                )
+
+            else:
+                logging.info(f"skip fp8_linear, Please update torch vision ")
 
         # Prepare video path for SAM2 processing (will be handled in pipeline)
         logging.info(f"Generating video ...")

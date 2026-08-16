@@ -4,21 +4,24 @@
   <img src="./assets/logo.png" width="200px" alt="Live Avatar Teaser">
 </p>
 
-<h1>🎬 Live Avatar: Streaming Real-time Audio-Driven Avatar Generation with Infinite Length</h1>
+<h1>(ECCV26 Oral) 🎬 Live Avatar: Streaming Real-time Audio-Driven Avatar Generation with Infinite Length</h1>
 <!-- <h3>The code will be open source in <strong><span style="color: #87CEEB;">early December</span></strong>.</h3> -->
+
 
 
 <p>
 <a href="https://github.com/Yubo-Shankui" style="color: inherit;">Yubo Huang</a><sup>1,2</sup> ·
 <a href="#" style="color: inherit;">Hailong Guo</a><sup>2,3</sup> ·
 <a href="#" style="color: inherit;">Fangtai Wu</a><sup>2,4</sup> ·
+<a href="#" style="color: inherit;">Weiqiang Wang</a><sup>5</sup> ·
 <a href="#" style="color: inherit;">Shifeng Zhang</a><sup>2</sup> ·
 <a href="#" style="color: inherit;">Shijie Huang</a><sup>2</sup> ·
 <a href="#" style="color: inherit;">Qijun Gan</a><sup>4</sup> ·
 <a href="#" style="color: inherit;">Lin Liu</a><sup>1</sup> ·
+<a href="#" style="color: inherit;">Ruihua Huang</a><sup>2,*</sup> ·
 <a href="#" style="color: inherit;">Sirui Zhao</a><sup>1,*</sup> ·
 <a href="http://staff.ustc.edu.cn/~cheneh/" style="color: inherit;">Enhong Chen</a><sup>1,*</sup> ·
-<a href="https://openreview.net/profile?id=%7EJiaming_Liu7" style="color: inherit;">Jiaming Liu</a><sup>2,‡</sup> ·
+<a href="https://openreview.net/profile?id=%7EJiaming_Liu7" style="color: inherit;">Jiaming Liu</a><sup>2,*,‡</sup> ·
 <a href="https://sites.google.com/view/stevenhoi/" style="color: inherit;">Steven Hoi</a><sup>2</sup>
 </p>
 
@@ -27,6 +30,8 @@
 <sup>2</sup> Alibaba Group &nbsp;&nbsp;
 <sup>3</sup> Beijing University of Posts and Telecommunications &nbsp;&nbsp;
 <sup>4</sup> Zhejiang University
+<sup>5</sup> Monash University
+  
 </p>
 
 <p style="font-size: 0.9em;">
@@ -38,7 +43,7 @@
 
 </div>
 
-> **TL;DR:** **Live Avatar** is an algorithm–system co-designed framework that enables real-time, streaming, infinite-length interactive avatar video generation. Powered by a **14B-parameter** diffusion model, it achieves **20 FPS** on **5×H800** GPUs with **4-step** sampling and supports **Block-wise Autoregressive** processing for **10,000+** second streaming videos.
+> **TL;DR:** **Live Avatar** is an algorithm–system co-designed framework that enables real-time, streaming, infinite-length interactive avatar video generation. Powered by a **14B-parameter** diffusion model, it achieves **45 FPS** on multi-card **H800** GPUs with **4-step** sampling and supports **Block-wise Autoregressive** processing for **10,000+** second streaming videos.
 
 <div align="center">
 
@@ -56,16 +61,19 @@
 ---
 ## ✨ Highlights
 
-> - ⚡ **​​Real-time Streaming Interaction**​​ - Achieve **20** FPS real-time streaming with low latency
+> - ⚡ **​​Real-time Streaming Interaction**​​ - Achieve **45** FPS real-time streaming with low latency
 > - ♾️ ​​**​​Infinite-length Autoregressive Generation**​​​​ - Support **10,000+** second continuous video generation
 > - 🎨 ​​**​​Generalization Performances**​​​​ - Strong generalization across cartoon characters, singing, and diverse scenarios 
 
 
 ---
 ## 📰 News
-- **[2025.12.16]** 🎉 LiveAvatar has reached 1,000+ stars on GitHub! Thank you to the community for the incredible support! ⭐
-- **[2025.12.12]** 🚀 We released single-gpu inference [Code](infinite_inference_single_gpu.sh) — no need for 5×H100 (house-priced server), a single 80GB VRAM GPU is enough to enjoy. 
-- **[2025.12.08]** 🚀 We released real-time inference [Code](infinite_inference_multi_gpu.sh) and the model [Weight](https://huggingface.co/Quark-Vision/Live-Avatar).
+- **[2026.6.18]** 🎉 LiveAvatar has been accepted by **ECCV 2026 Oral**! 🥳
+- **[2026.1.20]** 🚀 Major performance breakthrough (**v1.1**)! **FP8 quantization** enables inference on **48GB GPUs**, while advanced **compilation** and **cuDNN** attention boost speed to **~2.5x** peak and **3x** average FPS. Achieving stable **45+ FPS** on multi-H800 — share your results on different GPUs! Inference fixes also bring noticeable **quality improvements**, significantly surpassing the teacher model on qualitative metrics.
+<!-- - **[2026.1.9]** 🚀 Major performance update! Inference speed boosted to Peak 1.5x and Average 2x, achieving stable 30+ FPS on multi-H800 setups.  -->
+- **[2025.12.16]** 🎉 LiveAvatar has reached **1,000+** stars on GitHub! Thank you to the community for the incredible support! ⭐
+- **[2025.12.12]** 🚀 We released **single-gpu** inference [Code](infinite_inference_single_gpu.sh) — no need for 5×H800 (house-priced server), a single 80GB VRAM GPU is enough to enjoy. 
+- **[2025.12.08]** 🚀 We released **real-time** inference [Code](infinite_inference_multi_gpu.sh) and the model [Weight](https://huggingface.co/Quark-Vision/Live-Avatar).
 - **[2025.12.08]** 🎉 LiveAvatar won the Hugging Face [#1 Paper of the day](https://huggingface.co/papers/date/2025-12-05)!
 - **[2025.12.04]** 🏃‍♂️ We committed to open-sourcing the code in **early December**.
 - **[2025.12.04]** 🔥 We released [Paper](https://arxiv.org/abs/2512.04677) and [demo page](https://liveavatar.github.io/) Website.
@@ -87,11 +95,14 @@
 ### ⚙️ **Later updates**
 
 - ✅ Inference code supporting single GPU (offline generation)
-- ⬜ Multi-character support
+- ✅ Multi-character support
+- ✅ Inference Acceleration Stage1 (RoPE optimization, compilation, LoRA merge)
+- ✅ Streaming-VAE intergration
+- ✅ Inference Acceleration Stage2 (further compilation, fp8, cudnn attn)
 - ⬜ UI integration for easily streaming interaction
 - ⬜ TTS integration
 - ⬜ Training code 
-- ⬜ LiveAvatar v1.1
+- ⬜ LiveAvatar v1.2
 
 ## 🛠️ Installation
 
@@ -112,6 +123,11 @@ conda install -c nvidia/label/cuda-12.4.1 cudatoolkit -y
 ### 3. Install PyTorch & Flash Attention
 ```bash
 pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu128
+
+# If you are using NVIDIA Hopper architecture (H800/H200, etc.), FlashAttention 3 is recommended for a significant speedup:
+pip install flash_attn_3 --find-links https://windreamer.github.io/flash-attention3-wheels/cu128_torch280 --extra-index-url https://download.pytorch.org/whl/cu128
+
+# Otherwise, use FlashAttention 2:
 pip install flash-attn==2.8.3 --no-build-isolation
 ```
 
@@ -174,6 +190,10 @@ bash gradio_multi_gpu.sh
 > 💡 Currently, our TPP pipeline requires **five** GPUs for inference. We are planning to develop a 3-step version that can be deployed on a 4-GPU cluster.
 Furthermore, we are planning to integrate the [LightX2V](https://github.com/ModelTC/LightX2V) VAE component. This integration will eliminate the dependency on additional single-GPU VAE parallelism and support 4-step inference within a 4-GPU setup.
 
+> 💡 Compilation **(`ENABLE_COMPILE`)**: Enabling compilation will cause a long wait time during the first inference as the model compiles, but subsequent runs will see significant performance improvements. This is highly valuable for streaming long video scenarios. However, if you just want to quickly run a few test cases, we recommend disabling it by setting `export ENABLE_COMPILE=false` in your inference script.
+
+> 💡 FP8 Quantization **(`ENABLE_FP8`)**: FP8 offers **notable VRAM savings**, enabling inference on **48GB GPUs**, and also provides modest performance gains. Note that this may cause slight quality degradation. You can enable it by setting `export ENABLE_FP8=true` in your inference script.
+
 Please visit our [project page](https://liveavatar.github.io/) to see more examples and learn about the scenarios suitable for this model.
 ### Single-GPU Inference
 > 💡 This command can run on a single GPU with at least 80GB VRAM.
@@ -210,6 +230,12 @@ If you find this project useful for your research, please consider citing our pa
 * The majority of this project is released under the Apache 2.0 license as found in the [LICENSE](LICENSE).
 * The Wan model (Our base model) is also released under the Apache 2.0 license as found in the [LICENSE](https://github.com/Wan-Video/Wan2.2/blob/main/LICENSE.txt).
 * The project is a research preview. Please contact us if you find any potential violations. (jmliu1217@gmail.com)
+
+### 💬 WeChat Group
+
+<p align="center">
+  <img src="assets/wechat_group.png" alt="WeChat group" width="360" />
+</p>
 
 
 

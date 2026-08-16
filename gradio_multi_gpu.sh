@@ -9,11 +9,13 @@ export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=86400
 CUDA_VISIBLE_DEVICES=0,1,2,3,4
 export NCCL_DEBUG=WARN
 export NCCL_DEBUG_SUBSYS=OFF
+export HF_ENDPOINT=https://hf-mirror.com
 
 echo "=========================================="
 echo "Starting Gradio Web UI in Multi-GPU mode"
 echo "=========================================="
 
+export ENABLE_COMPILE=true
 CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES torchrun \
     --nproc_per_node=5 \
     --master_port=29502 \
@@ -36,4 +38,5 @@ CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES torchrun \
     --enable_vae_parallel \
     --ckpt_dir ckpt/Wan2.2-S2V-14B/ \
     --server_port 7860 \
-    --server_name "0.0.0.0"
+    --server_name "0.0.0.0" \
+    --fp8

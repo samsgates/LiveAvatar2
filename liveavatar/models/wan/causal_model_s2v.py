@@ -33,10 +33,11 @@ from liveavatar.models.wan.wan_2_2.modules.s2v.model_s2v import (
     zero_module,
     torch_dfs
 )
-from liveavatar.models.wan.wan_2_2.modules.s2v.model_s2v import rope_apply as rope_apply, rope_apply as causal_rope_apply
+from liveavatar.models.wan.wan_2_2.modules.s2v.model_s2v import rope_apply as rope_apply, rope_apply as causal_rope_apply, rope_apply_cond as causal_rope_apply_cond
 from liveavatar.models.wan.wan_2_2.modules.s2v.model_s2v import rope_apply_usp as rope_apply_usp, rope_apply_usp as causal_rope_apply_usp
 
-from liveavatar.models.wan.wan_base.modules.attention import attention
+# from liveavatar.models.wan.wan_base.modules.attention import attention
+from liveavatar.models.wan.wan_2_2.modules.attention import attention
 from liveavatar.models.wan.wan_2_2.modules.s2v.audio_utils import AudioInjector_WAN, CausalAudioEncoder
 from liveavatar.models.wan.causal_motioner import FramePackMotioner
 from liveavatar.models.wan.causal_s2v_utils import rollout_grid_sizes,causal_distributed_attention
@@ -44,6 +45,8 @@ from liveavatar.models.wan.wan_2_2.modules.s2v.s2v_utils import rope_precompute
 from liveavatar.models.wan.wan_2_2.distributed import util as dist_util
 from liveavatar.models.wan.wan_2_2.distributed.util import all_to_all,pad_chunk
 import torch.distributed as dist
+from liveavatar.models.wan.inference_utils import conditional_compile
+
 # wan 1.3B model has a weird channel / head configurations and require max-autotune to work with flexattention
 # see https://github.com/pytorch/pytorch/issues/133254
 # change to reduce-overhead for better distributed training performance
@@ -299,12 +302,12 @@ class CausalWanS2VSelfAttention(WanSelfAttention):
 
                 kv_cache["k"][:, current_start:(current_start+seg_len_block)] = roped_key[:,seg_idx[0]:seg_idx[1]]
                 kv_cache["v"][:, current_start:(current_start+seg_len_block)] = v[:,seg_idx[0]:seg_idx[1]]
-                x = flash_attention(
+                x = attention(
                     q=roped_query[:,seg_idx[0]:seg_idx[1]],
                     k=torch.cat(
                                 [
                                 kv_cache["k"][:, active_kv_cache_start:active_kv_cache_size],
-                                causal_rope_apply(
+                                causal_rope_apply_cond(
                                     kv_cache["cond_k"][:, :active_cond_cache_size], None, freqs_cond
                                     ).type_as(v)
                                 ],dim=1
@@ -319,19 +322,20 @@ class CausalWanS2VSelfAttention(WanSelfAttention):
                     window_size=self.window_size
                     )
             elif seg_idx[2]-seg_idx[1] > 0: #prefill cond caching
-                roped_query = causal_rope_apply(
+                roped_query = causal_rope_apply_cond(
                     q, grid_sizes, freqs).type_as(v) #grid_sizes不参与计算
                 kv_cache["cond_end"][0] = max(int(kv_cache["cond_end"]), seg_idx[2]-seg_idx[1])
                 kv_cache["cond_k"][:, :int(kv_cache["cond_end"])] = k[:,seg_idx[1]:seg_idx[2]]
                 kv_cache["cond_v"][:, :int(kv_cache["cond_end"])] = v[:,seg_idx[1]:seg_idx[2]]
-                x = flash_attention(
+                x = attention(
                     q=roped_query[:,seg_idx[1]:seg_idx[2]],
-                    k=causal_rope_apply(
+                    k=causal_rope_apply_cond(
                             k, grid_sizes, freqs
                         ).type_as(v)[:,:int(kv_cache["cond_end"])],
                     v=kv_cache["cond_v"][:, :int(kv_cache["cond_end"])],
                     k_lens=torch.tensor(int(kv_cache["cond_end"])).repeat(b),
-                    window_size=self.window_size)
+                    window_size=self.window_size
+                )
             else:
                 assert False, "segment index is invalid"
 
@@ -527,7 +531,7 @@ class CausalWanModel_S2V(ModelMixin, ConfigMixin):
             rope_params(45000, 2 * (d // 6)),
             rope_params(45000, 2 * (d // 6))
         ],
-                               dim=1)
+                               dim=1).to("cuda")
         self.rope_cache = {}
 
         # initialize weights
@@ -1046,6 +1050,7 @@ class CausalWanModel_S2V(ModelMixin, ConfigMixin):
         return [n for n in torch.zeros_like(cond_states)]
 
 
+    @conditional_compile
     def _forward_inference(
             self,
             x,
@@ -1084,7 +1089,7 @@ class CausalWanModel_S2V(ModelMixin, ConfigMixin):
                             add_last_motion = 2: All motion-related latents are used. check过了是 2
         drop_motion_frames  Bool, whether drop the motion frames info
         """
-        add_last_motion = self.add_last_motion * add_last_motion
+        add_last_motion = int(self.add_last_motion) * add_last_motion
         audio_input = torch.cat([
             audio_input[..., 0:1].repeat(1, 1, 1, motion_frames[0]), audio_input
         ], #torch.Size([1, 25, 1024, 80])->torch.Size([1, 25, 1024, 153])

@@ -10,6 +10,7 @@ echo "=========================================="
 echo "Starting Gradio Web UI in Single-GPU mode"
 echo "=========================================="
 
+export ENABLE_COMPILE=true
 CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES torchrun  \
     --nproc_per_node=1 \
     --master_port=29501 \
@@ -32,5 +33,6 @@ CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES torchrun  \
     --single_gpu \
     --ckpt_dir ckpt/Wan2.2-S2V-14B/ \
     --server_port 7860 \
-    --server_name "0.0.0.0"
+    --server_name "0.0.0.0" \
+    --fp8
 
